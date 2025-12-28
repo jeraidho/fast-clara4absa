@@ -9,23 +9,23 @@ class ClaraConfig:
     train_xml: str = "../data/train.xml"
     val_xml: str = "../data/val.xml"
     
-    # Параметры LoRA
+    # LoRA params.
     lora_r: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.05
     target_modules: list = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"])
     
-    # Параметры памяти
-    num_mem_tokens: int = 4
-    max_enc_len: int = 128
-    max_dec_len: int = 128
+    # Memory params.
+    num_mem_tokens: int = 8
+    max_enc_len: int = 256
+    max_dec_len: int = 256
     
-    # Гиперпараметры обучения
-    batch_size: int = 16
-    grad_accumulation_steps: int = 2
+    # Hyperparams.: training
+    batch_size: int = 4
+    grad_accumulation_steps: int = 8
     epochs: int = 5
     lr: float = 1e-4
-    warmup_steps_ratio: float = 0.1  # 10% шагов на разогрев
+    warmup_steps_ratio: float = 0.1  
     weight_decay: float = 0.01
     grad_accumulation_steps: int = 2
     val_batch_size: int = 16

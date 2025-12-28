@@ -1,32 +1,32 @@
 # ==============================================================================
 # FAST CLARA ABSA: BATCH STRUCTURE SPECIFICATION
 # ==============================================================================
-# B: Batch Size (например, 8, 16 или 32)
-# L_enc: Max Encoder Length (конфиг: 128)
-# L_dec: Max Decoder Length (конфиг: 128 или 64)
+# B: Batch Size (e.g, 8, 16 or 32)
+# L_enc: Max Encoder Length (config: 256)
+# L_dec: Max Decoder Length (config: 256)
 # ==============================================================================
 
 BATCH_SCHEMA = {
-    # --- ВХОД ДЛЯ ЭНКОДЕРА (СЖАТИЕ ТЕКСТА) ---
-    "enc_input_ids":  torch.LongTensor,   # Размер: [B, L_enc]
-    # Содержит: [Токены исходного текста] + [Токены памяти M0..Mk] + [Padding]
+    # --- INPUT FOR ENCODER (TEXT COMPRESSION) ---
+    "enc_input_ids":  torch.LongTensor,   # Size: [B, L_enc]
+    # Includes: [Original text tokens] + [Memory tokens M0..Mk] + [Padding]
 
-    "enc_mask":       torch.BoolTensor,   # Размер: [B, L_enc]
-    # Содержит: 1 для реальных токенов, 0 для паддинга
+    "enc_mask":       torch.BoolTensor,   # Size: [B, L_enc]
+    # Includes: 1 for real tokens, 0 for padding
 
-    # --- ВХОД ДЛЯ ДЕКОДЕРА (РАССУЖДЕНИЕ/ГЕНЕРАЦИЯ) ---
-    "dec_input_ids":  torch.LongTensor,   # Размер: [B, L_dec]
-    # Содержит: [Токены памяти M0..Mk] + [Токены промпта задачи] + [Токены ответа] + [Padding]
+    # --- INPUT FOR DECODER (DISCUSSION/GENERATION) ---
+    "dec_input_ids":  torch.LongTensor,   # Size: [B, L_dec]
+    # Includes: [Memory tokens M0..Mk] + [Tokens of task prompt] + [Target answer token] + [Padding]
 
-    "dec_mask":       torch.BoolTensor,   # Размер: [B, L_dec]
-    # Содержит: 1 для памяти, промпта и ответа. 0 для паддинга
+    "dec_mask":       torch.BoolTensor,   # Size: [B, L_dec]
+    # Includes: 1 for memory, prompt and answer. 0 for padding
 
-    # --- ТАРГЕТЫ ДЛЯ ВЫЧИСЛЕНИЯ LOSS ---
-    "labels":         torch.LongTensor,   # Размер: [B, L_dec]
-    # Содержит: -100 на всех позициях, КРОМЕ токенов ответа (Sentiment/Text/JSON)
-    # Позволяет вычислять CrossEntropy только по полезной генерации.
+    # --- TARGETS FOR COUNTING LOSS ---
+    "labels":         torch.LongTensor,   # Size: [B, L_dec]
+    # Includes: -100 for all positions, except answer tokens (Sentiment/Text/JSON)
+    # Allows counting CrossEntropy only for correct part of generation.
 
-    # --- МЕТАДАННЫЕ ---
-    "task":           list[str],          # Размер: [B]
-    # Содержит: Строковые идентификаторы ("rec", "ext", "reason") для каждой строки батча
+    # --- METADATA ---
+    "task":           list[str],          # Size: [B]
+    # Includes: String identifiers ("rec", "ext", "reason") for each task in training
 }

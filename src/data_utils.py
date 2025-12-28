@@ -122,44 +122,44 @@ class MamsClaraDataset(Dataset):
 
     
     def process_step(self, sample):
-        # --- ШАГ 1: ЭНКОДЕР (без изменений) ---
+        # --- STEP 1: ENCODER ---
         enc_text = sample['text'].strip() + " " + self.mem_tokens_str.strip()
-        enc_res = self.tokenizer(enc_text, max_length=self.max_enc_len, 
+        enc_res = self.tokenizer(enc_text, max_length=(self.max_enc_len-self.num_mem_tokens-2), 
                                 padding='max_length', truncation=True, return_tensors="pt")
 
-        # --- ШАГ 2: ПОДГОТОВКА ДЕКОДЕРА (Ручная сборка IDs) ---
+        # --- STEP 2: DECODER (Getting IDs) ---
         prompt_part = f"{self.mem_tokens_str} {sample['prompt']}".strip() + " "
         target_part = sample['target'].strip()
 
-        # 1. Получаем ID промпта
+        # 1. Get IDs of prompt
         prompt_ids = self.tokenizer.encode(prompt_part, add_special_tokens=False)
         
-        # 2. Получаем ID таргета и добавляем EOS
+        # 2. Get IDs of target and edd EOS
         target_ids = self.tokenizer.encode(target_part, add_special_tokens=False)
         target_ids.append(self.tokenizer.eos_token_id)
         
-        # 3. Собираем full_ids и labels синхронно
-        # В labels промпт закрываем -100
+        # 3. Get full_ids and labels
+        # In labels close prompt with -100
         full_ids = prompt_ids + target_ids
         labels_list = ([-100] * len(prompt_ids)) + target_ids
         
-        # 4. Обрезаем по max_dec_len, если текст слишком длинный
+        # 4. Truncate by max_dec_len, if text is too long
         full_ids = full_ids[:self.max_dec_len]
         labels_list = labels_list[:self.max_dec_len]
         
-        # 5. Ручной паддинг до фиксированной длины
+        # 5. Manual padding to max len
         actual_len = len(full_ids)
         padding_len = self.max_dec_len - actual_len
         
         if padding_len > 0:
             full_ids += [self.tokenizer.pad_token_id] * padding_len
-            # Паддинг в labels ВСЕГДА -100
+            # padding in labels: -100
             labels_list += [-100] * padding_len
         
         dec_input_ids = torch.tensor(full_ids)
         labels = torch.tensor(labels_list)
 
-        # --- ШАГ 3: СОЗДАНИЕ МАСКИ ВНИМАНИЯ ---
+        # --- STEP 3: ATTENTION MASK ---
         dec_mask = torch.zeros(self.max_dec_len, dtype=torch.bool)
         dec_mask[:actual_len] = True
 
@@ -181,6 +181,8 @@ def debug_clara_batch(batch, tokenizer, num_samples=3):
     """
     Детальная диагностика батча: декодирует тензоры обратно в текст, 
     проверяет маски и правильность расстановки -100 в labels.
+    Debug of batch method: decodes tensors to text
+    check masks and correct -100 in labels
     """
     print("\n" + "="*80)
     print(f"DIAGNOSTIC REPORT FOR BATCH (Batch Size: {len(batch['task'])})")
@@ -190,44 +192,43 @@ def debug_clara_batch(batch, tokenizer, num_samples=3):
         task = batch['task'][i]
         print(f"\n--- SAMPLE {i} | TASK: {task.upper()} ---")
 
-        # 1. Диагностика Энкодера (Compression)
+        # 1. --- ENCODER DEBUG (Compression) ---
         enc_ids = batch['enc_input_ids'][i]
         enc_text = tokenizer.decode(enc_ids, skip_special_tokens=False)
-        # Проверяем наличие токенов памяти
+        # check mem tokens
         mem_tokens_detected = [t for t in tokenizer.additional_special_tokens if t in enc_text]
         
         print(f"[Encoder Input]: {enc_text[:100]}... {enc_text[-50:]}")
         print(f"  > Memory Tokens Detected: {mem_tokens_detected}")
         print(f"  > Padding tokens count: {(enc_ids == tokenizer.pad_token_id).sum().item()}")
 
-        # 2. Диагностика Декодера (Reasoning/Generation)
+        # 2. --- DECODER DEBUG (Reasoning/Generation) ---
         dec_ids = batch['dec_input_ids'][i]
         dec_text = tokenizer.decode(dec_ids, skip_special_tokens=False)
         print(f"[Decoder Input]: {dec_text}")
 
-        # 3. Диагностика Labels (ОБУЧЕНИЕ)
+        # 3. --- LABELS DEBUG (Learning) ---
         labels = batch['labels'][i]
         
-        # Извлекаем то, на чем реально учится модель (где не -100)
+        # extract real targets for training (not -100)
         active_label_ids = labels[labels != -100]
         active_label_text = tokenizer.decode(active_label_ids, skip_special_tokens=False) if len(active_label_ids) > 0 else "EMPTY!"
         
         print(f"[Target Answer]: {active_label_text}")
 
-        # 4. Логические проверки (Sanity Checks)
-        # Проверка 1: labels должны совпадать с концом dec_input_ids
+        # 4. --- SANITY CHECKS --- 
+        # check 1: labels must be equal to the end of dec_input_ids
         actual_answer_ids = dec_ids[labels != -100]
         if not torch.equal(actual_answer_ids, active_label_ids):
             print("  [!] ERROR: Labels do not align with dec_input_ids!")
         
-        # Проверка 2: токены памяти [M] НЕ должны быть в labels (там должно быть -100)
-        # Мы предполагаем, что [M] токены - это спецтокены с большими ID
+        # check 2: memory tokens [M] are not in labels (must be -100)
         for m_token in tokenizer.additional_special_tokens:
             m_id = tokenizer.convert_tokens_to_ids(m_token)
             if m_id in labels:
                 print(f"  [!] WARNING: Memory token {m_token} leaked into Labels! (Model will try to predict it)")
 
-        # Проверка 3: Attention Mask
+        # check 3: attention mask
         if batch['enc_mask'][i][0] == 0:
             print("  [!] WARNING: Encoder mask starts with 0. Check your padding (should be right-padded).")
 
@@ -235,6 +236,10 @@ def debug_clara_batch(batch, tokenizer, num_samples=3):
 
 
 def stack_batch(samples):
+    """
+    additional method to stack batch from dataset items
+    used in debug method
+    """
     return {
         "enc_input_ids": torch.stack([s["enc_input_ids"] for s in samples]),
         "enc_mask": torch.stack([s["enc_mask"] for s in samples]),
