@@ -2,7 +2,7 @@
 **Continuous Latent Reasoning for Multi-Aspect Sentiment Analysis**
 
 ## Overview
-Этот проект представляет собой реализацию и адаптацию отдельных идей архитектуры **CLaRa (Continuous Latent Reasoning)** для задачи **Aspect-Based Sentiment Analysis (ABSA)**. 
+Этот проект представляет собой реализацию и адаптацию отдельных идей архитектуры **CLaRa (Continuous Latent Reasoning)** (He et al., 2025) для задачи **Aspect-Based Sentiment Analysis (ABSA)**. 
 
 Традиционные RAG и LLM системы страдают от ограниченного окна контекста и раздельной оптимизации поиска и генерации. **Fast CLaRa** решает эти проблемы путем сжатия текста в компактные **Memory Tokens** (непрерывные латентные представления) и совместного обучения ретривера (энкодера) и генератора (декодера) в едином дифференцируемом пространстве.
 
