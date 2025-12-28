@@ -28,6 +28,7 @@ fast-clara-absa/
 │   └── __init__.py
 ├── notebooks/
 │   ├── model_train.ipynb   # Основной Pipeline обучения: от инициализации до валидации
+│   ├── training_visualisation.ipynb  # Визуализация логов обучения 
 │   └── test_data_utils.ipynb # Юнит-тесты для проверки корректности сжатия и маскирования
 ├── research_logs/          # CSV-логи обучения (Losses, Learning Rate, Hyperparams.)
 ├── data/                   # (Local only) Исходные датасеты MAMS (train/val/test)
