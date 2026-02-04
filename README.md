@@ -66,13 +66,13 @@ $$L_{total} = \alpha L_{rec} + \beta L_{absa} + \gamma L_{mse}$$
 
 ---
 
-## Results (MAMS Dataset)
-*Backbone: Phi-3.5-mini-instruct | Memory Tokens: 8 | Compression Ratio: 4.16x*
+## Results (MAMS Dataset: only ATSA)
+*Backbone: Phi-3.5-mini-instruct (3.8B) | Memory Tokens: 12 | Compression Ratio: 2.78x*
 
 | Metric | Train | Test |
 | :--- | :--- | :--- |
-| **Accuracy** | ~76.1% | **~67.7%** |
-| **Macro F1** | ~76.0% | **~67.3%** |
+| **Accuracy** | ~88% | **~72%** |
+| **Macro F1** | ~87.95% | **~71.8%** |
 
 ---
 
